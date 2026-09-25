@@ -1,0 +1,149 @@
+#gsc-ds-bar {
+  position: fixed;
+  top: 12px;
+  right: 16px;
+  z-index: 2147483647;
+  font-family: "Google Sans", Roboto, -apple-system, Arial, sans-serif;
+  color: #202124;
+  user-select: none;
+}
+
+/* Collapsed launcher */
+#gsc-ds-bar.gsc-ds-launcher {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px 7px 11px;
+  background: #fff;
+  border: 1px solid #e3e6ea;
+  border-radius: 999px;
+  box-shadow: 0 2px 8px rgba(60, 64, 67, 0.24);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: #1a73e8;
+}
+#gsc-ds-bar.gsc-ds-launcher:hover { background: #f8faff; box-shadow: 0 3px 12px rgba(60, 64, 67, 0.3); }
+#gsc-ds-bar .gsc-ds-launcher-ico { font-size: 14px; line-height: 1; }
+
+/* Expanded card */
+#gsc-ds-bar.gsc-ds-card {
+  width: 230px;
+  padding: 10px 12px 12px;
+  background: #fff;
+  border: 1px solid #e3e6ea;
+  border-radius: 14px;
+  box-shadow: 0 4px 16px rgba(60, 64, 67, 0.24);
+}
+
+#gsc-ds-bar .gsc-ds-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+#gsc-ds-bar .gsc-ds-title {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+#gsc-ds-bar .gsc-ds-lagwrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: #80868b;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+#gsc-ds-bar input.gsc-ds-lag {
+  width: 30px;
+  padding: 2px 4px;
+  font-size: 11px;
+  text-align: center;
+  border: 1px solid #dadce0;
+  border-radius: 5px;
+  font-family: inherit;
+  background: #f8f9fa;
+  color: #202124;
+}
+#gsc-ds-bar .gsc-ds-close {
+  border: none;
+  background: transparent;
+  color: #9aa0a6;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0 2px;
+  border-radius: 4px;
+}
+#gsc-ds-bar .gsc-ds-close:hover { color: #202124; background: #f1f3f4; }
+
+#gsc-ds-bar .gsc-ds-section { margin-top: 8px; }
+#gsc-ds-bar .gsc-ds-section-title {
+  font-size: 9.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  color: #9aa0a6;
+  margin: 0 0 5px 2px;
+}
+#gsc-ds-bar .gsc-ds-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+#gsc-ds-bar .gsc-ds-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px 10px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: #e8f0fe;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: background 0.12s ease, transform 0.05s ease;
+}
+#gsc-ds-bar .gsc-ds-chip:hover { background: #d2e3fc; }
+#gsc-ds-bar .gsc-ds-chip:active { transform: scale(0.98); }
+#gsc-ds-bar .gsc-ds-chip--cmp {
+  background: #f1f3f4;
+}
+#gsc-ds-bar .gsc-ds-chip--cmp:hover { background: #e8eaed; }
+
+#gsc-ds-bar .gsc-ds-chip-label {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #1a73e8;
+  line-height: 1.2;
+}
+#gsc-ds-bar .gsc-ds-chip--cmp .gsc-ds-chip-label { color: #202124; }
+#gsc-ds-bar .gsc-ds-chip-sub {
+  font-size: 10px;
+  color: #5f6368;
+  margin-top: 1px;
+  line-height: 1.2;
+}
+
+@media (prefers-color-scheme: dark) {
+  #gsc-ds-bar { color: #e8eaed; }
+  #gsc-ds-bar.gsc-ds-card { background: #2a2b2d; border-color: #3c4043; box-shadow: 0 4px 16px rgba(0,0,0,0.5); }
+  #gsc-ds-bar.gsc-ds-launcher { background: #2a2b2d; border-color: #3c4043; color: #8ab4f8; box-shadow: 0 2px 8px rgba(0,0,0,0.5); }
+  #gsc-ds-bar.gsc-ds-launcher:hover { background: #303134; }
+  #gsc-ds-bar input.gsc-ds-lag { background: #202124; color: #e8eaed; border-color: #5f6368; }
+  #gsc-ds-bar .gsc-ds-close:hover { color: #e8eaed; background: #3c4043; }
+  #gsc-ds-bar .gsc-ds-chip { background: #1f3a5f; }
+  #gsc-ds-bar .gsc-ds-chip:hover { background: #274b7a; }
+  #gsc-ds-bar .gsc-ds-chip-label { color: #8ab4f8; }
+  #gsc-ds-bar .gsc-ds-chip--cmp { background: #35363a; }
+  #gsc-ds-bar .gsc-ds-chip--cmp:hover { background: #3f4044; }
+  #gsc-ds-bar .gsc-ds-chip--cmp .gsc-ds-chip-label { color: #e8eaed; }
+  #gsc-ds-bar .gsc-ds-chip-sub { color: #9aa0a6; }
+}
