@@ -4,11 +4,10 @@
   const LAUNCHER_ID = "gsc-ds-launcher";
   const CARD_ID = "gsc-ds-card";
   const LAG_KEY = "gsc_lag_days";
-  const REGEX_KEY = "gsc_exclude_regex";
-  const DEFAULT_REGEX = "tradutor|vertaler|traduction|traductor|uebersetzer|translate|blog";
+  const SAVED_KEY = "gsc_saved_filters";
 
   let lag = 3;
-  let excludeRegex = DEFAULT_REGEX;
+  let savedFilters = []; // [{ id, dim, mode, type, value }]
   let expanded = false;
   let listenersBound = false;
 
@@ -103,19 +102,48 @@
     location.href = url.toString();
   }
 
-  // GSC encodes a "query does NOT match regex" filter as query=!~<regex>.
-  function applyExclude(regex) {
+  // GSC filter URL encoding for the query/page dimension param:
+  //   contains              -> value
+  //   doesn't contain       -> !value
+  //   matches regex         -> ~value
+  //   doesn't match regex   -> !~value
+  function operatorPrefix(f) {
+    return (f.mode === "exclude" ? "!" : "") + (f.type === "regex" ? "~" : "");
+  }
+
+  function applyFilter(f) {
+    const val = (f.value || "").trim();
+    if (!val) return;
     const url = new URL(location.href);
-    const val = (regex || "").trim();
-    if (val) url.searchParams.set("query", "!~" + val);
-    else url.searchParams.delete("query");
+    url.searchParams.set(f.dim, operatorPrefix(f) + val);
     location.href = url.toString();
   }
 
-  function clearQueryFilter() {
+  function clearFilters() {
     const url = new URL(location.href);
     url.searchParams.delete("query");
+    url.searchParams.delete("page");
     location.href = url.toString();
+  }
+
+  function filterLabel(f) {
+    const d = f.dim === "page" ? "Page" : "Query";
+    const m = f.mode === "exclude" ? "excludes" : "includes";
+    const t = f.type === "regex" ? " regex" : "";
+    return `${d} ${m}${t}`;
+  }
+
+  function persistFilters() {
+    chrome.storage.sync.set({ [SAVED_KEY]: savedFilters });
+  }
+
+  function rebuildCard() {
+    const old = document.getElementById(CARD_ID);
+    if (!old) return;
+    old.remove();
+    const card = buildCard();
+    document.body.appendChild(card);
+    positionCard(card, getLauncher());
   }
 
   const chipRefreshers = [];
@@ -161,41 +189,116 @@
     return wrap;
   }
 
+  function makeSelect(options, value) {
+    const sel = document.createElement("select");
+    sel.className = "gsc-ds-select";
+    options.forEach(([val, label]) => {
+      const o = document.createElement("option");
+      o.value = val;
+      o.textContent = label;
+      if (val === value) o.selected = true;
+      sel.appendChild(o);
+    });
+    return sel;
+  }
+
+  function savedFilterChip(f) {
+    const chip = document.createElement("button");
+    chip.className = "gsc-ds-chip gsc-ds-chip--cmp gsc-ds-saved";
+    chip.title = `${filterLabel(f)}: ${f.value}`;
+    chip.innerHTML =
+      `<span class="gsc-ds-saved-main">` +
+      `<span class="gsc-ds-chip-label">${filterLabel(f)}</span>` +
+      `<span class="gsc-ds-chip-sub">${f.value}</span>` +
+      `</span>` +
+      `<span class="gsc-ds-saved-del" title="Delete this filter">×</span>`;
+    chip.addEventListener("click", (e) => {
+      if (e.target.classList.contains("gsc-ds-saved-del")) {
+        e.stopPropagation();
+        savedFilters = savedFilters.filter((x) => x.id !== f.id);
+        persistFilters();
+        rebuildCard();
+        return;
+      }
+      applyFilter(f);
+    });
+    return chip;
+  }
+
   function filterSection() {
     const wrap = document.createElement("div");
     wrap.className = "gsc-ds-section";
-    const h = document.createElement("div");
-    h.className = "gsc-ds-section-title";
-    h.textContent = "Exclude queries (regex)";
-    wrap.appendChild(h);
+
+    // --- Saved filters -----------------------------------------------------
+    if (savedFilters.length) {
+      const sh = document.createElement("div");
+      sh.className = "gsc-ds-section-title";
+      sh.textContent = "Saved filters";
+      wrap.appendChild(sh);
+      const grid = document.createElement("div");
+      grid.className = "gsc-ds-grid";
+      savedFilters.forEach((f) => grid.appendChild(savedFilterChip(f)));
+      wrap.appendChild(grid);
+    }
+
+    // --- Builder -----------------------------------------------------------
+    const bh = document.createElement("div");
+    bh.className = "gsc-ds-section-title";
+    bh.style.marginTop = savedFilters.length ? "10px" : "0";
+    bh.textContent = "Create filter";
+    wrap.appendChild(bh);
+
+    const selectRow = document.createElement("div");
+    selectRow.className = "gsc-ds-select-row";
+    const dimSel = makeSelect([["query", "Query"], ["page", "Page"]], "query");
+    const modeSel = makeSelect([["include", "Include"], ["exclude", "Exclude"]], "exclude");
+    const typeSel = makeSelect([["contains", "Contains"], ["regex", "Regex"]], "contains");
+    selectRow.appendChild(dimSel);
+    selectRow.appendChild(modeSel);
+    selectRow.appendChild(typeSel);
+    wrap.appendChild(selectRow);
 
     const input = document.createElement("input");
     input.type = "text";
     input.className = "gsc-ds-regex";
-    input.value = excludeRegex;
+    input.placeholder = "value (e.g. /blog/ or translate|login)";
     input.spellcheck = false;
-    input.title = "Regex of query terms to exclude (GSC query does-not-match-regex)";
-    input.addEventListener("input", () => {
-      excludeRegex = input.value;
-      chrome.storage.sync.set({ [REGEX_KEY]: excludeRegex });
-    });
     wrap.appendChild(input);
+
+    const current = () => ({
+      dim: dimSel.value, mode: modeSel.value, type: typeSel.value, value: input.value,
+    });
 
     const row = document.createElement("div");
     row.className = "gsc-ds-filter-row";
 
-    const excludeBtn = document.createElement("button");
-    excludeBtn.className = "gsc-ds-chip gsc-ds-chip--cmp gsc-ds-filter-apply";
-    excludeBtn.innerHTML = `<span class="gsc-ds-chip-label">Exclude</span>`;
-    excludeBtn.title = "Apply: queries NOT matching this regex";
-    excludeBtn.addEventListener("click", () => applyExclude(input.value));
-    row.appendChild(excludeBtn);
+    const applyBtn = document.createElement("button");
+    applyBtn.className = "gsc-ds-chip gsc-ds-chip--cmp gsc-ds-filter-apply";
+    applyBtn.innerHTML = `<span class="gsc-ds-chip-label">Apply</span>`;
+    applyBtn.title = "Apply this filter now";
+    applyBtn.addEventListener("click", () => applyFilter(current()));
+    row.appendChild(applyBtn);
+
+    const saveBtn = document.createElement("button");
+    saveBtn.className = "gsc-ds-chip gsc-ds-filter-save";
+    saveBtn.innerHTML = `<span class="gsc-ds-chip-label">Save</span>`;
+    saveBtn.title = "Save as a reusable button (and apply)";
+    saveBtn.addEventListener("click", () => {
+      const f = current();
+      if (!f.value.trim()) { input.focus(); return; }
+      f.id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      f.value = f.value.trim();
+      savedFilters.push(f);
+      persistFilters();
+      applyFilter(f);
+    });
+    row.appendChild(saveBtn);
 
     const clearBtn = document.createElement("button");
     clearBtn.className = "gsc-ds-chip gsc-ds-filter-clear";
     clearBtn.innerHTML = `<span class="gsc-ds-chip-label">Clear</span>`;
-    clearBtn.title = "Remove the query filter";
-    clearBtn.addEventListener("click", clearQueryFilter);
+    clearBtn.title = "Remove query & page filters from the URL";
+    clearBtn.addEventListener("click", clearFilters);
     row.appendChild(clearBtn);
 
     wrap.appendChild(row);
@@ -406,9 +509,9 @@
     observer.observe(document.body, { childList: true, subtree: true });
   }
 
-  chrome.storage.sync.get([LAG_KEY, REGEX_KEY], (res) => {
+  chrome.storage.sync.get([LAG_KEY, SAVED_KEY], (res) => {
     if (typeof res[LAG_KEY] === "number") lag = res[LAG_KEY];
-    if (typeof res[REGEX_KEY] === "string") excludeRegex = res[REGEX_KEY];
+    if (Array.isArray(res[SAVED_KEY])) savedFilters = res[SAVED_KEY];
     placeLauncher();
     bindGlobalListeners();
   });

@@ -19,7 +19,7 @@ GSC's built-in date picker takes several clicks for common ranges, and setting u
   - **MTD vs last year** — current MTD vs the same dates one year ago
   - **Last vs prev month** — last full month vs the month before it (month-over-month)
   - **Last Month YoY** — last full month vs the same month a year earlier
-- **Regex exclude filter** — one click applies a GSC "query doesn't match regex" filter. Default excludes translation/blog noise (`tradutor|vertaler|traduction|traductor|uebersetzer|translate|blog`); the pattern is editable and saved across sessions. A **Clear** button removes the filter.
+- **Filter builder** — create a Query or Page filter: pick **Query/Page**, **Include/Exclude**, and **Contains/Regex**, type a value, then **Apply** (one-off) or **Save**. Saved filters become one-click reusable buttons (persisted across sessions, deletable via the ×). A **Clear** button strips the `query` and `page` filters from the URL.
 - **Configurable data lag** — GSC data is usually 2–3 days behind; the lag field (default `3`) is saved across sessions and every range is computed against it.
 - **Live labels** — each chip shows the exact dates it will apply, with a full `A vs B` tooltip on hover.
 - **SPA-aware** — re-injects itself as you navigate within Search Console and removes itself when you leave the Performance report.
