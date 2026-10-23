@@ -1,23 +1,32 @@
-/* ---- Launcher (inline, directly before the Export button) -------------- */
+/* ---- Launcher (styled as a twin of the EXPORT button) ------------------ */
+.gsc-ds-row { display: flex; align-items: center; gap: 4px; }
+
 #gsc-ds-launcher {
+  all: unset;
+  box-sizing: border-box;
   display: inline-flex;
   align-items: center;
-  vertical-align: middle;
-  margin-right: 8px;
-  gap: 6px;
-  padding: 6px 12px 6px 10px;
-  background: #fff;
-  border: 1px solid #dadce0;
-  border-radius: 999px;
-  cursor: pointer;
-  font-family: "Google Sans", Roboto, -apple-system, Arial, sans-serif;
-  font-size: 13px;
+  height: 36px;
+  padding: 6px 8px;
+  border-radius: 3px;
+  background: transparent;
+  color: #444;
+  font-family: Roboto, RobotoDraft, Helvetica, Arial, sans-serif;
+  font-size: 14px;
   font-weight: 500;
-  color: #1a73e8;
-  white-space: nowrap;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  line-height: normal;
+  cursor: pointer;
+  position: static;
+  vertical-align: middle;
 }
-#gsc-ds-launcher:hover { background: #f8faff; border-color: #c6dafc; }
-#gsc-ds-launcher .gsc-ds-launcher-ico { font-size: 14px; line-height: 1; }
+#gsc-ds-launcher:hover { background: rgba(0, 0, 0, 0.04); }
+#gsc-ds-launcher:active,
+#gsc-ds-launcher[aria-expanded="true"] { background: rgba(0, 0, 0, 0.08); }
+#gsc-ds-launcher:focus-visible { outline: 2px solid #1a73e8; outline-offset: 1px; }
+#gsc-ds-launcher .gsc-ds-launcher-ico { width: 24px; height: 24px; flex: none; }
+#gsc-ds-launcher .gsc-ds-launcher-txt { padding-left: 8px; }
 
 /* ---- Card -------------------------------------------------------------- */
 #gsc-ds-card {
@@ -151,8 +160,10 @@
 
 /* ---- Dark theme -------------------------------------------------------- */
 @media (prefers-color-scheme: dark) {
-  #gsc-ds-launcher { background: #2a2b2d; border-color: #3c4043; color: #8ab4f8; }
-  #gsc-ds-launcher:hover { background: #303134; border-color: #5f6368; }
+  /* Launcher color is copied from EXPORT at runtime; just adjust hover tint. */
+  #gsc-ds-launcher:hover { background: rgba(255, 255, 255, 0.08); }
+  #gsc-ds-launcher:active,
+  #gsc-ds-launcher[aria-expanded="true"] { background: rgba(255, 255, 255, 0.12); }
 
   #gsc-ds-card { background: #2a2b2d; border-color: #3c4043; color: #e8eaed; box-shadow: 0 4px 18px rgba(0,0,0,0.5); }
   #gsc-ds-card input.gsc-ds-lag,

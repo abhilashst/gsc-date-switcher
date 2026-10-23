@@ -206,8 +206,19 @@
     const btn = document.createElement("button");
     btn.id = LAUNCHER_ID;
     btn.className = "gsc-ds-launcher";
+    btn.type = "button";
+    btn.setAttribute("role", "button");
+    btn.setAttribute("aria-label", "DATES");
+    btn.setAttribute("aria-expanded", "false");
     btn.title = "GSC date presets & filters";
-    btn.innerHTML = `<span class="gsc-ds-launcher-ico">📅</span><span class="gsc-ds-launcher-txt">Dates</span>`;
+    // Material "date_range" icon, 24x24, inheriting color via currentColor.
+    btn.innerHTML =
+      '<svg class="gsc-ds-launcher-ico" width="24" height="24" viewBox="0 0 24 24" ' +
+      'fill="currentColor" aria-hidden="true">' +
+      '<path d="M9 10H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V1h-2v2H8V1H6v2H5' +
+      'c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/>' +
+      '</svg>' +
+      '<span class="gsc-ds-launcher-txt">DATES</span>';
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
       expanded = !expanded;
@@ -309,9 +320,40 @@
     }
 
     launcher.style.display = "inline-flex";
+
+    // Make the shared parent a flex row so launcher and EXPORT line up.
+    const parent = exportBtn.parentElement;
+    parent.classList.add("gsc-ds-row");
+    parent.style.display = "flex";
+    parent.style.alignItems = "center";
+    parent.style.gap = "4px";
+
     if (exportBtn.previousElementSibling !== launcher) {
-      exportBtn.parentElement.insertBefore(launcher, exportBtn);
+      parent.insertBefore(launcher, exportBtn);
     }
+    matchExport(launcher, exportBtn);
+  }
+
+  // Copy EXPORT's computed text color (so dark theme matches) and verify
+  // the two buttons line up.
+  function matchExport(launcher, exportBtn) {
+    try {
+      const cs = getComputedStyle(exportBtn);
+      if (cs && cs.color) launcher.style.color = cs.color;
+    } catch (e) { /* ignore */ }
+
+    requestAnimationFrame(() => {
+      try {
+        const a = launcher.getBoundingClientRect();
+        const b = exportBtn.getBoundingClientRect();
+        if (Math.abs(a.top - b.top) > 1 || Math.abs(a.height - 36) > 1) {
+          console.warn("[GSC Date Switcher] launcher not aligned with EXPORT:", {
+            launcherTop: Math.round(a.top), exportTop: Math.round(b.top),
+            launcherHeight: Math.round(a.height), exportHeight: Math.round(b.height),
+          });
+        }
+      } catch (e) { /* ignore */ }
+    });
   }
 
   function positionCard(card, launcher) {
@@ -337,6 +379,7 @@
     } else if (card) {
       card.remove();
     }
+    launcher.setAttribute("aria-expanded", String(expanded && !!document.getElementById(CARD_ID)));
   }
 
   function bindGlobalListeners() {
