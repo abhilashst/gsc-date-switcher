@@ -10,6 +10,7 @@
   let savedFilters = []; // [{ id, dim, mode, type, value }]
   let expanded = false;
   let listenersBound = false;
+  let alignWarned = false;
 
   function pad(n) { return String(n).padStart(2, "0"); }
   function fmt(d) { return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`; }
@@ -449,8 +450,8 @@
     matchExport(launcher, exportBtn);
   }
 
-  // Copy EXPORT's computed text color (so dark theme matches) and verify
-  // the two buttons line up.
+  // Copy EXPORT's computed text color (so dark theme matches), size the
+  // launcher to EXPORT's actual height so they line up, then verify.
   function matchExport(launcher, exportBtn) {
     try {
       const cs = getComputedStyle(exportBtn);
@@ -459,13 +460,18 @@
 
     requestAnimationFrame(() => {
       try {
-        const a = launcher.getBoundingClientRect();
         const b = exportBtn.getBoundingClientRect();
-        if (Math.abs(a.top - b.top) > 1 || Math.abs(a.height - 36) > 1) {
-          console.warn("[GSC Date Switcher] launcher not aligned with EXPORT:", {
-            launcherTop: Math.round(a.top), exportTop: Math.round(b.top),
-            launcherHeight: Math.round(a.height), exportHeight: Math.round(b.height),
-          });
+        // GSC's EXPORT button isn't always 36px; match its height so the
+        // flex row centers both to the same top edge.
+        if (b.height) launcher.style.height = Math.round(b.height) + "px";
+        const a = launcher.getBoundingClientRect();
+        if (!alignWarned && Math.abs(a.top - b.top) > 2) {
+          alignWarned = true;
+          console.warn(
+            "[GSC Date Switcher] launcher not aligned with EXPORT " +
+            `(launcher top ${Math.round(a.top)}px h ${Math.round(a.height)}px, ` +
+            `export top ${Math.round(b.top)}px h ${Math.round(b.height)}px)`
+          );
         }
       } catch (e) { /* ignore */ }
     });

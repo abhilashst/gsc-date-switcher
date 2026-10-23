@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "GSC Date Switcher",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "description": "Injects quick date-range buttons (Current Month / Last Month) into the Google Search Console Performance page.",
   "permissions": ["storage"],
   "content_scripts": [
