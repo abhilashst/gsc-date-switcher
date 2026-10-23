@@ -205,11 +205,14 @@
   function savedFilterChip(f) {
     const chip = document.createElement("button");
     chip.className = "gsc-ds-chip gsc-ds-chip--cmp gsc-ds-saved";
-    chip.title = `${filterLabel(f)}: ${f.value}`;
+    const rule = `${filterLabel(f)}: ${f.value}`;
+    const head = f.label || filterLabel(f);
+    const sub = f.label ? rule : f.value;
+    chip.title = f.label ? `${f.label} — ${rule}` : rule;
     chip.innerHTML =
       `<span class="gsc-ds-saved-main">` +
-      `<span class="gsc-ds-chip-label">${filterLabel(f)}</span>` +
-      `<span class="gsc-ds-chip-sub">${f.value}</span>` +
+      `<span class="gsc-ds-chip-label">${head}</span>` +
+      `<span class="gsc-ds-chip-sub">${sub}</span>` +
       `</span>` +
       `<span class="gsc-ds-saved-del" title="Delete this filter">×</span>`;
     chip.addEventListener("click", (e) => {
@@ -258,6 +261,13 @@
     selectRow.appendChild(typeSel);
     wrap.appendChild(selectRow);
 
+    const labelInput = document.createElement("input");
+    labelInput.type = "text";
+    labelInput.className = "gsc-ds-regex";
+    labelInput.placeholder = "label (optional, e.g. No translations)";
+    labelInput.spellcheck = false;
+    wrap.appendChild(labelInput);
+
     const input = document.createElement("input");
     input.type = "text";
     input.className = "gsc-ds-regex";
@@ -288,6 +298,8 @@
       if (!f.value.trim()) { input.focus(); return; }
       f.id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
       f.value = f.value.trim();
+      const lbl = labelInput.value.trim();
+      if (lbl) f.label = lbl;
       savedFilters.push(f);
       persistFilters();
       applyFilter(f);
