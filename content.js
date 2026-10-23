@@ -430,23 +430,31 @@
 
     const exportBtn = findExportButton();
     if (!exportBtn || !exportBtn.parentElement) {
-      launcher.style.display = "none";
+      if (launcher.style.display !== "none") launcher.style.display = "none";
       if (expanded) { expanded = false; syncCard(); }
       return;
     }
 
+    const parent = exportBtn.parentElement;
+
+    // Already in the right spot? Do nothing (keeps the safety interval cheap
+    // and avoids layout thrash on GSC's constant mutations).
+    const placed =
+      launcher.isConnected &&
+      launcher.parentElement === parent &&
+      exportBtn.previousElementSibling === launcher &&
+      launcher.style.display !== "none";
+    if (placed) return;
+
     launcher.style.display = "inline-flex";
 
     // Make the shared parent a flex row so launcher and EXPORT line up.
-    const parent = exportBtn.parentElement;
     parent.classList.add("gsc-ds-row");
     parent.style.display = "flex";
     parent.style.alignItems = "center";
     parent.style.gap = "4px";
 
-    if (exportBtn.previousElementSibling !== launcher) {
-      parent.insertBefore(launcher, exportBtn);
-    }
+    parent.insertBefore(launcher, exportBtn);
     matchExport(launcher, exportBtn);
   }
 
@@ -518,19 +526,35 @@
     });
 
     // GSC re-renders its header on property/report/date changes, which can
-    // drop our launcher. Re-place it (debounced) whenever the DOM settles.
+    // drop our launcher. A pure trailing debounce can be starved on a page
+    // that mutates continuously, so run on the leading edge and guarantee a
+    // run at least every ~500ms while mutations keep arriving.
     let t = null;
-    const observer = new MutationObserver(() => {
-      if (t) clearTimeout(t);
-      t = setTimeout(() => { placeLauncher(); }, 300);
-    });
+    let lastRun = 0;
+    const schedule = () => {
+      const now = Date.now();
+      if (now - lastRun >= 500) {
+        lastRun = now;
+        placeLauncher();
+      } else if (!t) {
+        t = setTimeout(() => { t = null; lastRun = Date.now(); placeLauncher(); }, 250);
+      }
+    };
+    const observer = new MutationObserver(schedule);
     observer.observe(document.body, { childList: true, subtree: true });
+
+    // Safety net: a cheap guarded re-check (early-returns when already in
+    // place) so the launcher recovers even if the observer misses a render.
+    setInterval(placeLauncher, 1000);
   }
 
   chrome.storage.sync.get([LAG_KEY, SAVED_KEY], (res) => {
     if (typeof res[LAG_KEY] === "number") lag = res[LAG_KEY];
     if (Array.isArray(res[SAVED_KEY])) savedFilters = res[SAVED_KEY];
     placeLauncher();
+    // GSC renders its toolbar asynchronously after document_idle; retry a few
+    // times so the launcher appears even when it isn't in the DOM yet.
+    [300, 800, 1500, 3000].forEach((ms) => setTimeout(placeLauncher, ms));
     bindGlobalListeners();
   });
 })();
