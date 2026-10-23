@@ -10,7 +10,7 @@ GSC's built-in date picker takes several clicks for common ranges, and setting u
 
 ## Features
 
-- **Anchored to the toolbar** — a small `📅 Dates` pill is injected next to GSC's **Export** button (falls back to a floating top-right pill if the toolbar can't be located). Click to expand, `×` or click-away to collapse.
+- **Anchored to the toolbar** — a small `📅 Dates` pill is injected inline, directly before GSC's **Export** button, so it never overlaps the account switcher. A `MutationObserver` keeps it in place as Search Console re-renders the header; if a report has no Export button, the pill is hidden rather than floating. Click to expand, `×` or click-away to collapse.
 - **Range presets** (no comparison):
   - **Current Month** — 1st of the month → today − lag
   - **Last Month** — the full previous calendar month

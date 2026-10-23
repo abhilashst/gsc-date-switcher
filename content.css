@@ -1,7 +1,9 @@
-/* ---- Launcher ---------------------------------------------------------- */
+/* ---- Launcher (inline, directly before the Export button) -------------- */
 #gsc-ds-launcher {
   display: inline-flex;
   align-items: center;
+  vertical-align: middle;
+  margin-right: 8px;
   gap: 6px;
   padding: 6px 12px 6px 10px;
   background: #fff;
@@ -13,22 +15,9 @@
   font-weight: 500;
   color: #1a73e8;
   white-space: nowrap;
-  vertical-align: middle;
 }
 #gsc-ds-launcher:hover { background: #f8faff; border-color: #c6dafc; }
 #gsc-ds-launcher .gsc-ds-launcher-ico { font-size: 14px; line-height: 1; }
-
-/* Inline (anchored next to Export in the GSC toolbar) */
-#gsc-ds-launcher.gsc-ds-inline { margin-left: 8px; }
-
-/* Floating fallback when the toolbar can't be found */
-#gsc-ds-launcher.gsc-ds-float {
-  position: fixed;
-  top: 12px;
-  right: 16px;
-  z-index: 2147483647;
-  box-shadow: 0 2px 8px rgba(60, 64, 67, 0.24);
-}
 
 /* ---- Card -------------------------------------------------------------- */
 #gsc-ds-card {

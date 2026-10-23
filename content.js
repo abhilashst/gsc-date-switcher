@@ -6,8 +6,6 @@
   const LAG_KEY = "gsc_lag_days";
   const REGEX_KEY = "gsc_exclude_regex";
   const DEFAULT_REGEX = "tradutor|vertaler|traduction|traductor|uebersetzer|translate|blog";
-  const TOOLBAR_XPATH =
-    "/html/body/div[1]/c-wiz[6]/c-wiz/div/div[1]/div[1]/div[1]/div[2]/div/div/div[1]";
 
   let lag = 3;
   let excludeRegex = DEFAULT_REGEX;
@@ -213,7 +211,7 @@
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
       expanded = !expanded;
-      ensureUI();
+      syncCard();
     });
     return btn;
   }
@@ -258,7 +256,7 @@
     close.className = "gsc-ds-close";
     close.textContent = "×";
     close.title = "Collapse";
-    close.addEventListener("click", () => { expanded = false; ensureUI(); });
+    close.addEventListener("click", () => { expanded = false; syncCard(); });
     head.appendChild(close);
 
     card.appendChild(head);
@@ -270,38 +268,49 @@
 
   // ---- placement ----------------------------------------------------------
 
+  let launcherEl = null; // single reused instance
+
+  function getLauncher() {
+    if (!launcherEl) launcherEl = buildLauncher();
+    return launcherEl;
+  }
+
+  // The Export control: prefer aria-label="EXPORT" (class names are obfuscated
+  // and change); fall back to a role=button whose visible text is "export".
   function findExportButton() {
-    const nodes = document.querySelectorAll("span, button, div");
-    for (const n of nodes) {
-      if (n.childElementCount === 0 && n.textContent && n.textContent.trim() === "Export") {
-        return n.closest('[role="button"], button') || n;
-      }
+    const buttons = document.querySelectorAll('[role="button"]');
+    for (const b of buttons) {
+      const al = b.getAttribute("aria-label");
+      if (al && al.trim().toUpperCase() === "EXPORT") return b;
+    }
+    for (const b of buttons) {
+      const txt = (b.textContent || "").trim().toLowerCase();
+      if (txt === "export") return b;
     }
     return null;
   }
 
-  function findToolbar() {
-    try {
-      const node = document.evaluate(
-        TOOLBAR_XPATH, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null
-      ).singleNodeValue;
-      if (node) return node;
-    } catch (e) { /* ignore */ }
-    const exp = findExportButton();
-    if (exp && exp.parentElement) return exp.parentElement;
-    return null;
-  }
+  // Insert the launcher immediately before Export, reusing the one instance.
+  // If there's no Export button (or we've left Performance), hide it.
+  function placeLauncher() {
+    const launcher = getLauncher();
 
-  function placeLauncher(launcher) {
-    const toolbar = findToolbar();
-    if (toolbar) {
-      launcher.classList.add("gsc-ds-inline");
-      launcher.classList.remove("gsc-ds-float");
-      toolbar.appendChild(launcher);
-    } else {
-      launcher.classList.add("gsc-ds-float");
-      launcher.classList.remove("gsc-ds-inline");
-      document.body.appendChild(launcher);
+    if (!onPerformancePage()) {
+      if (launcher.isConnected) launcher.remove();
+      if (expanded) { expanded = false; syncCard(); }
+      return;
+    }
+
+    const exportBtn = findExportButton();
+    if (!exportBtn || !exportBtn.parentElement) {
+      launcher.style.display = "none";
+      if (expanded) { expanded = false; syncCard(); }
+      return;
+    }
+
+    launcher.style.display = "inline-flex";
+    if (exportBtn.previousElementSibling !== launcher) {
+      exportBtn.parentElement.insertBefore(launcher, exportBtn);
     }
   }
 
@@ -315,23 +324,11 @@
     card.style.left = `${Math.round(left)}px`;
   }
 
-  function ensureUI() {
-    if (!onPerformancePage()) {
-      const l = document.getElementById(LAUNCHER_ID);
-      const c = document.getElementById(CARD_ID);
-      if (l) l.remove();
-      if (c) c.remove();
-      return;
-    }
-
-    let launcher = document.getElementById(LAUNCHER_ID);
-    if (!launcher || !launcher.isConnected) {
-      launcher = buildLauncher();
-      placeLauncher(launcher);
-    }
-
+  // Show/hide + position the date panel relative to the launcher.
+  function syncCard() {
     let card = document.getElementById(CARD_ID);
-    if (expanded) {
+    const launcher = getLauncher();
+    if (expanded && launcher.isConnected && launcher.style.display !== "none") {
       if (!card) {
         card = buildCard();
         document.body.appendChild(card);
@@ -340,26 +337,36 @@
     } else if (card) {
       card.remove();
     }
+  }
 
-    if (!listenersBound) {
-      listenersBound = true;
-      const reposition = () => {
-        const c = document.getElementById(CARD_ID);
-        const l = document.getElementById(LAUNCHER_ID);
-        if (c && l) positionCard(c, l);
-      };
-      window.addEventListener("scroll", reposition, true);
-      window.addEventListener("resize", reposition);
-      document.addEventListener("click", () => {
-        if (expanded) { expanded = false; ensureUI(); }
-      });
-    }
+  function bindGlobalListeners() {
+    if (listenersBound) return;
+    listenersBound = true;
+
+    const reposition = () => {
+      const c = document.getElementById(CARD_ID);
+      if (c) positionCard(c, getLauncher());
+    };
+    window.addEventListener("scroll", reposition, true);
+    window.addEventListener("resize", reposition);
+    document.addEventListener("click", () => {
+      if (expanded) { expanded = false; syncCard(); }
+    });
+
+    // GSC re-renders its header on property/report/date changes, which can
+    // drop our launcher. Re-place it (debounced) whenever the DOM settles.
+    let t = null;
+    const observer = new MutationObserver(() => {
+      if (t) clearTimeout(t);
+      t = setTimeout(() => { placeLauncher(); }, 300);
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
   }
 
   chrome.storage.sync.get([LAG_KEY, REGEX_KEY], (res) => {
     if (typeof res[LAG_KEY] === "number") lag = res[LAG_KEY];
     if (typeof res[REGEX_KEY] === "string") excludeRegex = res[REGEX_KEY];
-    ensureUI();
-    setInterval(ensureUI, 1000); // survive GSC single-page navigation / re-renders
+    placeLauncher();
+    bindGlobalListeners();
   });
 })();
