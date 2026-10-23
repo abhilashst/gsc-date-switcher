@@ -10,14 +10,16 @@ GSC's built-in date picker takes several clicks for common ranges, and setting u
 
 ## Features
 
-- **Collapsed by default** — a small `📅 Dates` pill sits in the top-right; click to expand, `×` to collapse.
+- **Anchored to the toolbar** — a small `📅 Dates` pill is injected next to GSC's **Export** button (falls back to a floating top-right pill if the toolbar can't be located). Click to expand, `×` or click-away to collapse.
 - **Range presets** (no comparison):
   - **Current Month** — 1st of the month → today − lag
   - **Last Month** — the full previous calendar month
 - **Compare presets** (sets GSC's comparison range):
   - **MTD vs last MTD** — current month-to-date vs the same-length window in the previous month
   - **MTD vs last year** — current MTD vs the same dates one year ago
+  - **Last vs prev month** — last full month vs the month before it (month-over-month)
   - **Last Month YoY** — last full month vs the same month a year earlier
+- **Regex exclude filter** — one click applies a GSC "query doesn't match regex" filter. Default excludes translation/blog noise (`tradutor|vertaler|traduction|traductor|uebersetzer|translate|blog`); the pattern is editable and saved across sessions. A **Clear** button removes the filter.
 - **Configurable data lag** — GSC data is usually 2–3 days behind; the lag field (default `3`) is saved across sessions and every range is computed against it.
 - **Live labels** — each chip shows the exact dates it will apply, with a full `A vs B` tooltip on hover.
 - **SPA-aware** — re-injects itself as you navigate within Search Console and removes itself when you leave the Performance report.
